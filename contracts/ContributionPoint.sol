@@ -68,8 +68,9 @@ contract ContributionPoint is
                         '{',
                         '"name": "CONTRIBUTOR #', contributorId.toString(), '", ',
                         '"description": "PANGEA Contribution Point, this NFT represents contribution point for PANGEA contributors",',
-                        '"numsOfContributions": ', uint256(_contributionRecords[contributor].length).toString(), ",",
-                        '"totalPoints": ', pointMessage,
+                        '"attributes": [',
+                            '{"trait_type":"numOfContributions","value":',uint256(_contributionRecords[contributor].length).toString(),"},",
+                            '{"trait_type":"totalPoints","value":',pointMessage,"}]",
                         '}'
                     )
                 )

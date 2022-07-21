@@ -41,9 +41,11 @@ const deployFunction: DeployFunction = async function ({
     waitConfirmations: 1,
   });
 
-  const contributionPoint = ContributionPoint__factory.connect(deployResult.address, ethers.provider) as ContributionPoint;
-  let ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MANAGER"));
-  await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, deployer));
+  if (deployResult.newlyDeployed) {
+    const contributionPoint = ContributionPoint__factory.connect(deployResult.address, ethers.provider) as ContributionPoint;
+    let ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MANAGER"));
+    await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, deployer));
+  }
 };
 
 export default deployFunction;
