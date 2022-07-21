@@ -6,6 +6,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/UsePointCallee.sol";
 import "./interfaces/IContributionPoint.sol";
 import "./interfaces/IContributionPointModerator.sol";
@@ -17,6 +19,7 @@ contract ContributionPoint is
     ERC721Upgradeable,
     AccessControlUpgradeable,
     MulticallUpgradeable {
+    using Strings for uint256;
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER");
     mapping(address => ContributionRecord[]) private _contributionRecords;
     mapping(address => int256) private _pointOf;
@@ -54,6 +57,27 @@ contract ContributionPoint is
     //////////////////////////////////////////////
     // View Functions
     /////////////////////////////////////////////
+    function tokenURI(uint256 contributorId) public view override returns (string memory) {
+        address contributor = ownerOf(contributorId);
+        int256 point = _pointOf[contributor];
+        string memory pointMessage = point > 0 ? uint256(point).toString() : string(abi.encodePacked("-", uint256(-point).toString()));
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{',
+                        '"name": "CONTRIBUTOR #', contributorId.toString(), '", ',
+                        '"description": "PANGEA Contribution Point, this NFT represents contribution point for PANGEA contributors",',
+                        '"numsOfContributions": ', uint256(_contributionRecords[contributor].length).toString(), ",",
+                        '"totalPoints": ', pointMessage,
+                        '}'
+                    )
+                )
+            )
+        );
+        return string(abi.encodePacked("data:application/json;base64,", json));
+    }
+
     function totalSupply() external view returns (uint256) {
         return _contributorCounter;
     }

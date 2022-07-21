@@ -494,4 +494,28 @@ describe("Contribution Point", function () {
       expect(await contributionPoint.contributionPointOf(contributor0.address)).to.be.eq(-700);
     })
   })
+
+  describe("# TOKENURI", async () => {
+    beforeEach("init contributionPoint", async () => {
+      await contributionPoint.connect(deployer).initialize("HI", "HI");
+      await contributionPoint.connect(deployer).grantRole(
+          ROLE,
+          manager.address
+      );
+
+      await contributionPoint.connect(manager).createTag("HI");
+      await contributionPoint.connect(manager).createTag("HELLO");
+      await contributionPoint.connect(manager).createTag("HIHI");
+
+      const givenPoint = 1000;
+      await contributionPoint.connect(manager).createRecord(
+          contributor0.address, 0, givenPoint
+      );
+    })
+
+    it("revert case : no balance", async () => {
+      const tokenURI = await contributionPoint.tokenURI(1);
+      console.log(tokenURI);
+    })
+  })
 });
