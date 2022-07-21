@@ -10,6 +10,8 @@ interface IContributionPoint is IContributionStruct {
 
     function contributorIdOf(address contributor) external view returns (uint256);
 
+    function totalTags() external view returns (uint256);
+
     function tagDescription(uint32 tagId) external view returns (string memory);
 
     function contributionRecordCounts(address contributor) external view returns (uint256);

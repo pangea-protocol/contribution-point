@@ -9,3 +9,6 @@ cache/
 artifacts/
 types/
 deployments/abis
+
+coverage/
+coverage.json

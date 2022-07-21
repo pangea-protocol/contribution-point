@@ -6,6 +6,7 @@ import "hardhat-abi-exporter";
 import "@typechain/hardhat";
 import "hardhat-deploy";
 import "hardhat-contract-sizer";
+import "hardhat-gas-reporter";
 import "solidity-coverage";
 
 import { HardhatUserConfig } from "hardhat/config";
@@ -15,6 +16,10 @@ const accounts = {
 };
 
 const config: HardhatUserConfig = {
+  gasReporter: {
+    gasPrice: 250,
+    currency: "ETH"
+  },
   defaultNetwork: process.env.NETWORK ? process.env.NETWORK : "cypress",
   networks: {
     hardhat: {

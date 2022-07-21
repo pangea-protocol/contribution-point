@@ -17,7 +17,7 @@ contract ContributionPoint is
     ERC721Upgradeable,
     AccessControlUpgradeable,
     MulticallUpgradeable {
-    bytes32 public constant MODERATOR_ROLE = keccak256("MODERATOR");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER");
     mapping(address => ContributionRecord[]) private _contributionRecords;
     mapping(address => int256) private _pointOf;
 
@@ -34,11 +34,12 @@ contract ContributionPoint is
             __AccessControl_init();
             __Multicall_init();
 
-            _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+            _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+            registerContributor(_msgSender());
     }
 
-    modifier moderatorOnly() {
-        require(hasRole(MODERATOR_ROLE, msg.sender), "Caller is not a moderator");
+    modifier managerOnly() {
+        require(hasRole(MANAGER_ROLE, _msgSender()), "ONLY MANAGER");
         _;
     }
 
@@ -60,6 +61,10 @@ contract ContributionPoint is
     function contributorIdOf(address contributor) external view returns (uint256) {
         require(balanceOf(contributor) > 0, "NO MEMBERSHIP");
         return _contributorIdOf[contributor];
+    }
+
+    function totalTags() external view returns (uint256) {
+        return _tagDescriptions.length;
     }
 
     /// @notice return contribution tag description
@@ -99,7 +104,7 @@ contract ContributionPoint is
     //////////////////////////////////////////////
     function usePoint(uint32 amount, address to, bytes calldata data) external {
         int256 balance = _pointOf[_msgSender()];
-        require(balance > 0 && uint256(amount) >= uint256(balance), "balance INSUFFICIENT");
+        require(balance > 0 && uint256(amount) <= uint256(balance), "INSUFFICIENT");
         _pointOf[_msgSender()] -= castToInt256(amount);
 
         UsePointCallee(to).usePointCallback(amount, data);
@@ -108,16 +113,17 @@ contract ContributionPoint is
     //////////////////////////////////////////////
     // manipulation functions
     //
-    // only moderator can call
+    // only manager can call
     /////////////////////////////////////////////
-    function createTag(string memory desc) external moderatorOnly returns (uint32 tagId) {
+    function createTag(string memory desc) external managerOnly returns (uint32 tagId) {
         require(_tagDescriptions.length < type(uint32).max);
 
         _tagDescriptions.push(desc);
         return uint32(_tagDescriptions.length - 1);
     }
 
-    function updateTagDescription(uint32 tagId, string memory desc) external moderatorOnly {
+    function updateTagDescription(uint32 tagId, string memory desc) external managerOnly {
+        require(tagId < _tagDescriptions.length, "INVALID TAG ID");
         _tagDescriptions[tagId] = desc;
     }
 
@@ -126,7 +132,7 @@ contract ContributionPoint is
     /////////////////////////////////////////////
 
     /// @notice create contribution record
-    function createRecord(address contributor, uint32 tagId, uint32 point) external moderatorOnly {
+    function createRecord(address contributor, uint32 tagId, uint32 point) external managerOnly {
         require(tagId < _tagDescriptions.length, "INVALID TAG ID");
         require(point > 0, "NOT ZERO");
 
@@ -139,10 +145,10 @@ contract ContributionPoint is
         _pointOf[contributor] += castToInt256(point);
     }
 
-    /// @notice update contribution record
-    function updateRecord(address contributor, uint256 orderId, uint32 point) external moderatorOnly {
+    /// @notice modify contribution record
+    function updateRecord(address contributor, uint256 orderId, uint32 point) external managerOnly {
         require(point > 0, "NOT ZERO");
-        require(orderId < _contributionRecords[contributor].length, "ORDER ID");
+        require(orderId < _contributionRecords[contributor].length, "INVALID ORDER ID");
 
         uint32 prevPoint = _contributionRecords[contributor][orderId].point;
         _contributionRecords[contributor][orderId].point = point;
@@ -155,7 +161,7 @@ contract ContributionPoint is
     }
 
     /// @notice delete contribution record
-    function deleteRecord(address contributor, uint256 orderId) external moderatorOnly returns (ContributionRecord memory record) {
+    function deleteRecord(address contributor, uint256 orderId) external managerOnly returns (ContributionRecord memory record) {
         ContributionRecord[] storage records = _contributionRecords[contributor];
         record = records[orderId];
         for (uint i = orderId; i < records.length -1; i++) {
@@ -175,13 +181,8 @@ contract ContributionPoint is
     }
 
     /// @dev block to transfer or multiple mint
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256
-    ) internal view override {
+    function _beforeTokenTransfer(address from, address, uint256) internal pure override {
         require(from == address(0), "NOT-TRANSFERABLE");
-        require(balanceOf(to) == 0, "ALREADY MINT");
     }
 
     function castToInt256(uint32 x) private pure returns (int256 y) {
