@@ -6,22 +6,20 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "./interfaces/UsePointCallee.sol";
+import "./interfaces/IContributionPoint.sol";
+import "./interfaces/IContributionPointModerator.sol";
 
 /// @notice Contribution Point membership NFT
 contract ContributionPoint is
+    IContributionPoint,
+    IContributionPointModerator,
     ERC721Upgradeable,
     AccessControlUpgradeable,
     MulticallUpgradeable {
-
     bytes32 public constant MODERATOR_ROLE = keccak256("MODERATOR");
-
-    struct ContributionRecord {
-        uint32 tagId;
-        uint32 time;
-        uint32 point;
-    }
     mapping(address => ContributionRecord[]) private _contributionRecords;
-    mapping(address => uint64) private _pointOf;
+    mapping(address => int256) private _pointOf;
 
     string[] private _tagDescriptions;
 
@@ -75,39 +73,42 @@ contract ContributionPoint is
     }
 
     // @notice read record by index
-    function contributionRecordByIndex(
-        address contributor,
-        uint256 orderId
-    ) external view returns (ContributionRecord memory) {
+    function contributionRecordByIndex(address contributor, uint256 orderId) external view returns (ContributionRecord memory) {
         return _contributionRecords[contributor][orderId];
     }
 
     // @notice read records by range
-    function contributionRecords(
-        address contributor,
-        uint256 startId,
-        uint256 nums
-    ) external view returns (ContributionRecord[] memory records) {
+    function contributionRecords(address contributor, uint256 start, uint256 nums) external view returns (ContributionRecord[] memory records) {
         ContributionRecord[] memory _contributorRecords = _contributionRecords[contributor];
-        uint256 endId = Math.min(startId + nums - 1, _contributorRecords.length - 1);
-        require(startId <= endId, "NO RECORDS");
+        uint256 end = Math.min(start + nums - 1, _contributorRecords.length - 1);
+        require(start <= end, "NO RECORDS");
 
-        records = new ContributionRecord[](endId - startId + 1);
-        for (uint256 i = startId; i <= endId; i++) {
-            records[i - startId] = _contributorRecords[i];
+        records = new ContributionRecord[](end - start + 1);
+        for (uint256 i = start; i <= end; i++) {
+            records[i - start] = _contributorRecords[i];
         }
     }
 
     // @notice read total contribution point which contributor take
-    function contributionPointOf(address contributor) external view returns (uint64) {
+    function contributionPointOf(address contributor) external view returns (int256) {
         return _pointOf[contributor];
+    }
+
+    //////////////////////////////////////////////
+    // contributor's function
+    //////////////////////////////////////////////
+    function usePoint(uint32 amount, address to, bytes calldata data) external {
+        int256 balance = _pointOf[_msgSender()];
+        require(balance > 0 && uint256(amount) >= uint256(balance), "balance INSUFFICIENT");
+        _pointOf[_msgSender()] -= castToInt256(amount);
+
+        UsePointCallee(to).usePointCallback(amount, data);
     }
 
     //////////////////////////////////////////////
     // manipulation functions
     //
     // only moderator can call
-    //
     /////////////////////////////////////////////
     function createTag(string memory desc) external moderatorOnly returns (uint32 tagId) {
         require(_tagDescriptions.length < type(uint32).max);
@@ -116,7 +117,7 @@ contract ContributionPoint is
         return uint32(_tagDescriptions.length - 1);
     }
 
-    function updateDescription(uint32 tagId, string memory desc) external moderatorOnly {
+    function updateTagDescription(uint32 tagId, string memory desc) external moderatorOnly {
         _tagDescriptions[tagId] = desc;
     }
 
@@ -135,36 +136,26 @@ contract ContributionPoint is
         }
 
         _contributionRecords[contributor].push(ContributionRecord(tagId, uint32(block.timestamp), point));
-        _pointOf[contributor] += point;
+        _pointOf[contributor] += castToInt256(point);
     }
 
     /// @notice update contribution record
-    function updateRecord(
-        address contributor,
-        uint256 orderId,
-        uint32 point
-    ) external moderatorOnly {
+    function updateRecord(address contributor, uint256 orderId, uint32 point) external moderatorOnly {
         require(point > 0, "NOT ZERO");
+        require(orderId < _contributionRecords[contributor].length, "ORDER ID");
 
         uint32 prevPoint = _contributionRecords[contributor][orderId].point;
         _contributionRecords[contributor][orderId].point = point;
 
         if (prevPoint < point) {
-            _pointOf[contributor] += point - prevPoint;
+            _pointOf[contributor] += castToInt256(point - prevPoint);
         } else {
-            _pointOf[contributor] -= prevPoint - point;
+            _pointOf[contributor] -= castToInt256(prevPoint - point);
         }
     }
 
     /// @notice delete contribution record
-    function deleteRecord(
-        address contributor,
-        uint256 orderId
-    ) external
-      moderatorOnly
-      returns (
-        ContributionRecord memory record
-    ) {
+    function deleteRecord(address contributor, uint256 orderId) external moderatorOnly returns (ContributionRecord memory record) {
         ContributionRecord[] storage records = _contributionRecords[contributor];
         record = records[orderId];
         for (uint i = orderId; i < records.length -1; i++) {
@@ -172,12 +163,12 @@ contract ContributionPoint is
         }
         records.pop();
 
-        _pointOf[contributor] -= record.point;
+        _pointOf[contributor] -= castToInt256(record.point);
     }
 
     function registerContributor(
         address contributor
-    ) internal {
+    ) private {
         _mint(contributor, _contributorCounter);
         _contributorIdOf[contributor] = _contributorCounter;
         _contributorCounter++;
@@ -189,8 +180,11 @@ contract ContributionPoint is
         address to,
         uint256
     ) internal view override {
-        // only mint allow
         require(from == address(0), "NOT-TRANSFERABLE");
         require(balanceOf(to) == 0, "ALREADY MINT");
+    }
+
+    function castToInt256(uint32 x) private pure returns (int256 y) {
+        y = int256(uint256(x));
     }
 }
