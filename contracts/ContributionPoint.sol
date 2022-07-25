@@ -59,8 +59,34 @@ contract ContributionPoint is
     /////////////////////////////////////////////
     function tokenURI(uint256 contributorId) public view override returns (string memory) {
         address contributor = ownerOf(contributorId);
-        int256 point = _pointOf[contributor];
-        string memory pointMessage = point > 0 ? uint256(point).toString() : string(abi.encodePacked("-", uint256(-point).toString()));
+        string memory pointMessage;
+        {
+            int256 point = _pointOf[contributor];
+            pointMessage = point > 0 ? uint256(point).toString() : string(abi.encodePacked("-", uint256(-point).toString()));
+        }
+
+        uint256 length = _contributionRecords[contributor].length;
+        string memory contributions = '';
+        if (length > 0) {
+            string memory firstContributed = '';
+            string memory recentContributed = '';
+            string memory recentContribution = '';
+
+            {
+                string memory firstContributedTime = uint256(_contributionRecords[contributor][0].time).toString();
+                firstContributed = string(abi.encodePacked(',{"display_type": "date", "trait_type":"firstContributed","value":',firstContributedTime,"}"));
+            }
+            {
+                string memory recentContributedTime = uint256(_contributionRecords[contributor][length-1].time).toString();
+                recentContributed = string(abi.encodePacked(',{"display_type": "date", "trait_type":"recentContributed","value":',recentContributedTime,"}"));
+            }
+            {
+                string memory desc = _tagDescriptions[_contributionRecords[contributor][length-1].tagId];
+                recentContribution = string(abi.encodePacked(',{"trait_type":"recentContribution","value": "',desc,'"}'));
+            }
+            contributions = string(abi.encodePacked(firstContributed, recentContributed, recentContribution));
+        }
+
         string memory json = Base64.encode(
             bytes(
                 string(
@@ -69,9 +95,10 @@ contract ContributionPoint is
                         '"name": "CONTRIBUTOR #', contributorId.toString(), '", ',
                         '"description": "PANGEA Contribution Point, this NFT represents contribution point for PANGEA contributors",',
                         '"attributes": [',
-                            '{"trait_type":"numOfContributions","value":',uint256(_contributionRecords[contributor].length).toString(),"},",
-                            '{"trait_type":"totalPoints","value":',pointMessage,"}]",
-                        '}'
+                            '{"display_type": "number", "trait_type":"numOfContributions","value":', length.toString(),"}",
+                            ',{"display_type": "number", "trait_type":"totalPoints","value":',pointMessage,"}",
+                            contributions,
+                        ']}'
                     )
                 )
             )
