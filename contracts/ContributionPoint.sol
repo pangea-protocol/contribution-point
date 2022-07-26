@@ -59,34 +59,6 @@ contract ContributionPoint is
     /////////////////////////////////////////////
     function tokenURI(uint256 contributorId) public view override returns (string memory) {
         address contributor = ownerOf(contributorId);
-        string memory pointMessage;
-        {
-            int256 point = _pointOf[contributor];
-            pointMessage = point > 0 ? uint256(point).toString() : string(abi.encodePacked("-", uint256(-point).toString()));
-        }
-
-        uint256 length = _contributionRecords[contributor].length;
-        string memory contributions = '';
-        if (length > 0) {
-            string memory firstContributed = '';
-            string memory recentContributed = '';
-            string memory recentContribution = '';
-
-            {
-                string memory firstContributedTime = uint256(_contributionRecords[contributor][0].time).toString();
-                firstContributed = string(abi.encodePacked(',{"display_type": "date", "trait_type":"firstContributed","value":',firstContributedTime,"}"));
-            }
-            {
-                string memory recentContributedTime = uint256(_contributionRecords[contributor][length-1].time).toString();
-                recentContributed = string(abi.encodePacked(',{"display_type": "date", "trait_type":"recentContributed","value":',recentContributedTime,"}"));
-            }
-            {
-                string memory desc = _tagDescriptions[_contributionRecords[contributor][length-1].tagId];
-                recentContribution = string(abi.encodePacked(',{"trait_type":"recentContribution","value": "',desc,'"}'));
-            }
-            contributions = string(abi.encodePacked(firstContributed, recentContributed, recentContribution));
-        }
-
         string memory json = Base64.encode(
             bytes(
                 string(
@@ -95,15 +67,50 @@ contract ContributionPoint is
                         '"name": "CONTRIBUTOR #', contributorId.toString(), '", ',
                         '"description": "PANGEA Contribution Point, this NFT represents contribution point for PANGEA contributors",',
                         '"attributes": [',
-                            '{"display_type": "number", "trait_type":"numOfContributions","value":', length.toString(),"}",
-                            ',{"display_type": "number", "trait_type":"totalPoints","value":',pointMessage,"}",
-                            contributions,
+                            contributorNumText(contributor),
+                            contributionsText(contributor),
                         ']}'
                     )
                 )
             )
         );
         return string(abi.encodePacked("data:application/json;base64,", json));
+    }
+
+    function contributorNumText(address contributor) private view returns (string memory) {
+        int256 point = _pointOf[contributor];
+        string memory pointMessage = point > 0 ? uint256(point).toString() : string(abi.encodePacked("-", uint256(-point).toString()));
+
+        return string(abi.encodePacked(
+            '{"display_type": "number", "trait_type":"numOfContributions","value":', (_contributionRecords[contributor].length).toString(),"}",
+            ',{"display_type": "number", "trait_type":"totalPoints","value":',pointMessage,"}"
+        ));
+    }
+
+    function contributionsText(address contributor) private view returns (string memory text) {
+        uint256 length = _contributionRecords[contributor].length;
+        if (length > 0) {
+            text = '';
+            {
+                string memory firstContributedTime = uint256(_contributionRecords[contributor][0].time).toString();
+                text = string(abi.encodePacked(
+                        text, ',{"display_type": "date", "trait_type":"joinDate","value":', firstContributedTime, "}"
+                    ));
+            }
+            {
+                for (uint256 i = 0;i < length; i++) {
+                    ContributionRecord memory record = _contributionRecords[contributor][i];
+
+                    string memory desc = _tagDescriptions[record.tagId];
+
+                    text = string(abi.encodePacked(
+                            text, ',{"trait_type":"', desc,',","value": "',uint256(record.point).toString(),'"}'
+                        ));
+                }
+            }
+        } else {
+            text = '';
+        }
     }
 
     function totalSupply() external view returns (uint256) {
