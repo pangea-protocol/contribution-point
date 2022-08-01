@@ -26,7 +26,15 @@ describe("Contribution Point", function () {
     [deployer, manager, contributor0, contributor1] = await ethers.getSigners();
 
     // ======== CONTRACTS ==========
-    const ContributionPoint = await ethers.getContractFactory("ContributionPoint");
+    const background = await (await ethers.getContractFactory("Background")).deploy();
+    const font = await (await ethers.getContractFactory("Font")).deploy();
+    const logo = await (await ethers.getContractFactory("Logo")).deploy();
+
+    const ContributionPoint = await ethers.getContractFactory("ContributionPoint",{libraries: {
+        Background:background.address,
+        Font:font.address,
+        Logo:logo.address
+      }});
     contributionPoint = await ContributionPoint.deploy() as ContributionPoint;
 
     pointCallee = await smock.fake<UsePointCallee>("UsePointCallee");
