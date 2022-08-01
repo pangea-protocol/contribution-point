@@ -24,6 +24,23 @@ const deployFunction: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer, dev } = await getNamedAccounts();
 
+  const {address:Background} = await deploy('Background', {
+    from:deployer
+  });
+  const {address:Logo} = await deploy('Logo', {
+    from:deployer
+  });
+  const {address:Font} = await deploy('Font', {
+    from:deployer
+  });
+  const {address:SVGGenerator} = await deploy('SVGGenerator', {
+    from:deployer,
+    libraries: {
+      Background,
+      Logo,
+      Font
+    }
+  })
 
   const deployResult  = await deploy("ContributionPoint", {
     from: deployer,
@@ -36,6 +53,9 @@ const deployFunction: DeployFunction = async function ({
           args: ["PANGEA CONTRIBUTION", "PANGEA-CONTRIBUTOR"]
         }
       }
+    },
+    libraries: {
+      SVGGenerator
     },
     log:true,
     waitConfirmations: 1,

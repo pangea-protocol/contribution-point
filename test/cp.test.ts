@@ -29,11 +29,13 @@ describe("Contribution Point", function () {
     const background = await (await ethers.getContractFactory("Background")).deploy();
     const font = await (await ethers.getContractFactory("Font")).deploy();
     const logo = await (await ethers.getContractFactory("Logo")).deploy();
-
-    const ContributionPoint = await ethers.getContractFactory("ContributionPoint",{libraries: {
+    const SVGGenerator = await (await ethers.getContractFactory('SVGGenerator', {libraries:{
         Background:background.address,
         Font:font.address,
         Logo:logo.address
+      }})).deploy();
+    const ContributionPoint = await ethers.getContractFactory("ContributionPoint",{libraries: {
+        SVGGenerator:SVGGenerator.address
       }});
     contributionPoint = await ContributionPoint.deploy() as ContributionPoint;
 

@@ -12,3 +12,5 @@ deployments/abis
 
 coverage/
 coverage.json
+
+docs/
