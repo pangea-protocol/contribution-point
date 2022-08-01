@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/UsePointCallee.sol";
@@ -17,7 +18,9 @@ contract ContributionPoint is
     IContributionPointModerator,
     ERC721Upgradeable,
     AccessControlUpgradeable,
-    MulticallUpgradeable {
+    MulticallUpgradeable,
+    OwnableUpgradeable {
+    using Strings for uint256;
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER");
     mapping(address => ContributionRecord[]) private _contributionRecords;
     mapping(address => int256) private _pointOf;
@@ -37,6 +40,7 @@ contract ContributionPoint is
 
             _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
             registerContributor(_msgSender());
+            __Ownable_init();
     }
 
     modifier managerOnly() {
