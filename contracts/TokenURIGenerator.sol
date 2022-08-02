@@ -63,7 +63,7 @@ library TokenURIGenerator {
                     string memory desc = IContributionPoint(address(this)).tagDescription(record.tagId);
 
                     text = string(abi.encodePacked(
-                            text, ',{"trait_type":"', desc,',","value": "',Strings.toString(uint256(record.point)),'"}'
+                            text, ',{"trait_type":"', desc,'","value": "',Strings.toString(uint256(record.point)),'"}'
                         ));
                 }
             }
