@@ -7,11 +7,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/UsePointCallee.sol";
 import "./interfaces/IContributionPoint.sol";
 import "./interfaces/IContributionPointModerator.sol";
+import "./TokenURIGenerator.sol";
 
 /// @notice Contribution Point membership NFT
 contract ContributionPoint is
@@ -61,59 +60,7 @@ contract ContributionPoint is
     // View Functions
     /////////////////////////////////////////////
     function tokenURI(uint256 contributorId) public view override returns (string memory) {
-        address contributor = ownerOf(contributorId);
-        string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{',
-                        '"name": "CONTRIBUTOR #', contributorId.toString(), '", ',
-                        '"description": "PANGEA Contribution Point, this NFT represents contribution point for PANGEA contributors",',
-                        '"attributes": [',
-                            contributorNumText(contributor),
-                            contributionsText(contributor),
-                        ']}'
-                    )
-                )
-            )
-        );
-        return string(abi.encodePacked("data:application/json;base64,", json));
-    }
-
-    function contributorNumText(address contributor) private view returns (string memory) {
-        int256 point = _pointOf[contributor];
-        string memory pointMessage = point > 0 ? uint256(point).toString() : string(abi.encodePacked("-", uint256(-point).toString()));
-
-        return string(abi.encodePacked(
-            '{"display_type": "number", "trait_type":"numOfContributions","value":', (_contributionRecords[contributor].length).toString(),"}",
-            ',{"display_type": "number", "trait_type":"totalPoints","value":',pointMessage,"}"
-        ));
-    }
-
-    function contributionsText(address contributor) private view returns (string memory text) {
-        uint256 length = _contributionRecords[contributor].length;
-        if (length > 0) {
-            text = '';
-            {
-                string memory firstContributedTime = uint256(_contributionRecords[contributor][0].time).toString();
-                text = string(abi.encodePacked(
-                        text, ',{"display_type": "date", "trait_type":"joinDate","value":', firstContributedTime, "}"
-                    ));
-            }
-            {
-                for (uint256 i = 0;i < length; i++) {
-                    ContributionRecord memory record = _contributionRecords[contributor][i];
-
-                    string memory desc = _tagDescriptions[record.tagId];
-
-                    text = string(abi.encodePacked(
-                            text, ',{"trait_type":"', desc,',","value": "',uint256(record.point).toString(),'"}'
-                        ));
-                }
-            }
-        } else {
-            text = '';
-        }
+        return TokenURIGenerator.tokenURI(contributorId);
     }
 
     function totalSupply() external view returns (uint256) {
