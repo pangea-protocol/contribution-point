@@ -22,16 +22,19 @@ const deployFunction: DeployFunction = async function ({
                                                          ethers,
                                                        }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
-  const { deployer, dev } = await getNamedAccounts();
+  const { deployer, dev, operation } = await getNamedAccounts();
 
   const {address:Background} = await deploy('Background', {
-    from:deployer
+    from:deployer,
+    log:true
   });
   const {address:Logo} = await deploy('Logo', {
-    from:deployer
+    from:deployer,
+    log:true
   });
   const {address:Font} = await deploy('Font', {
-    from:deployer
+    from:deployer,
+    log:true
   });
   const {address:SVGGenerator} = await deploy('SVGGenerator', {
     from:deployer,
@@ -39,7 +42,8 @@ const deployFunction: DeployFunction = async function ({
       Background,
       Logo,
       Font
-    }
+    },
+    log:true
   })
 
   const deployResult  = await deploy("ContributionPoint", {
@@ -66,6 +70,7 @@ const deployFunction: DeployFunction = async function ({
   if (deployResult.newlyDeployed) {
     let ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MANAGER"));
     await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, deployer));
+    await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, operation));
   }
 };
 
