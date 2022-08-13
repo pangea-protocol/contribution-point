@@ -48,7 +48,7 @@ library SVGGenerator {
 
     function addressMessage(address owner) internal pure returns (string memory) {
         return string(abi.encodePacked(
-            '<text x="132" y="225" text-anchor="middle" font-size="8" font-family="IBMPlexSans" fill="#000000">',
+            '<text x="132" y="225" text-anchor="middle" font-size="9" font-family="IBMPlexSans" fill="#000000">',
             Strings.toHexString(uint160(owner), 20),
             '</text>'
         ));
