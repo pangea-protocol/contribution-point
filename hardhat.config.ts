@@ -40,19 +40,22 @@ const config: HardhatUserConfig = {
     cypress: {
       chainId: 8217,
       url: "https://public-node-api.klaytnapi.com/v1/cypress",
-      accounts: [process.env.DEPLOYER_ADDRESS!, process.env.DEV_ADDRESS!, process.env.OPERATION_ADDRESS!],
+      accounts: [process.env.DEPLOYER_ADDRESS!],
       gasPrice: 250000000000,
     },
   },
   namedAccounts: {
     deployer: {
       default: 0,
+      cypress:"0x2A2F23ff33671361010D357529BDF0adca9416Fc"
     },
     dev: {
       default: 1,
+      cypress:"0x9906594cF4CC26b62fEf0eA53CE159F4d2Ad9a32"
     },
     operation: {
       default: 2,
+      cypress:"0xFFf27E60c51f86b6A1B1279fe625F0461f344634"
     }
   },
   paths: {
