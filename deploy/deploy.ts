@@ -1,6 +1,6 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import {ContractTransaction} from "ethers";
+import {BigNumber, ContractTransaction} from "ethers";
 import {ContributionPoint, ContributionPoint__factory} from "../types";
 import {ethers} from "hardhat";
 
@@ -26,15 +26,18 @@ const deployFunction: DeployFunction = async function ({
 
   const {address:Background} = await deploy('Background', {
     from:deployer,
-    log:true
+    log:true,
+    gasPrice: BigNumber.from("250000000000")
   });
   const {address:Logo} = await deploy('Logo', {
     from:deployer,
-    log:true
+    log:true,
+    gasPrice: BigNumber.from("250000000000")
   });
   const {address:Font} = await deploy('Font', {
     from:deployer,
-    log:true
+    log:true,
+    gasPrice: BigNumber.from("250000000000")
   });
   const {address:SVGGenerator} = await deploy('SVGGenerator', {
     from:deployer,
@@ -43,7 +46,8 @@ const deployFunction: DeployFunction = async function ({
       Logo,
       Font
     },
-    log:true
+    log:true,
+    gasPrice: BigNumber.from("250000000000")
   })
 
   const deployResult  = await deploy("ContributionPoint", {
@@ -63,14 +67,19 @@ const deployFunction: DeployFunction = async function ({
     },
     log:true,
     waitConfirmations: 1,
+    gasPrice: BigNumber.from("250000000000")
   });
   const contributionPoint = ContributionPoint__factory.connect(deployResult.address, ethers.provider) as ContributionPoint;
   console.log(await contributionPoint.owner())
 
   if (deployResult.newlyDeployed) {
     let ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MANAGER"));
-    await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, deployer));
-    await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, operation));
+    await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, deployer, {
+      gasPrice: BigNumber.from("250000000000")
+    }));
+    await doTransaction(contributionPoint.connect(await ethers.getNamedSigner("deployer")).grantRole(ROLE, operation, {
+      gasPrice: BigNumber.from("250000000000")
+    }));
   }
 };
 
