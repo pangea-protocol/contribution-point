@@ -154,6 +154,28 @@ contract ContributionPoint is
         _pointOf[contributor] += castToInt256(point);
     }
 
+    /// @notice batch Call Records
+    function createRecords(address[] memory contributors, uint32[] memory tagIds, uint32[] memory points) external managerOnly {
+        require(contributors.length == tagIds.length, "INVALID LENGTH");
+        require(tagIds.length == points.length, "INVALID LENGTH");
+
+        for (uint256 i = 0; i < contributors.length; i++) {
+            address contributor = contributors[i];
+            uint32 tagId = tagIds[i];
+            uint32 point = points[i];
+
+            require(tagId < _tagDescriptions.length, "INVALID TAG ID");
+            require(point > 0, "NOT ZERO");
+
+            if (balanceOf(contributor) == 0) {
+                registerContributor(contributor);
+            }
+
+            _contributionRecords[contributor].push(ContributionRecord(tagId, uint32(block.timestamp), point));
+            _pointOf[contributor] += castToInt256(point);
+        }
+    }
+
     /// @notice modify contribution record
     function updateRecord(address contributor, uint256 orderId, uint32 point) external managerOnly {
         require(point > 0, "NOT ZERO");

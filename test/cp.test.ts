@@ -195,6 +195,25 @@ describe("Contribution Point", function () {
 
     it("create contribution record twice", async () => {
       const givenPoint = 1000;
+      const givenTagId = 0;
+      await contributionPoint.connect(manager).createRecords(
+          [contributor0.address, contributor0.address, contributor1.address], [givenTagId, givenTagId, givenTagId], [givenPoint, givenPoint, 1200]
+      );
+
+      expect(await contributionPoint.balanceOf(contributor0.address)).to.be.eq(1);
+      expect(await contributionPoint.balanceOf(contributor1.address)).to.be.eq(1);
+      expect(await contributionPoint.contributionRecordCounts(contributor0.address)).to.be.eq(2);
+      expect(await contributionPoint.contributionRecordCounts(contributor1.address)).to.be.eq(1);
+      expect(await contributionPoint.contributionPointOf(contributor0.address)).to.be.eq(givenPoint*2);
+      expect(await contributionPoint.contributionPointOf(contributor1.address)).to.be.eq(1200);
+
+      const record = await contributionPoint.contributionRecordByIndex(contributor0.address, 0);
+      expect(record.point).to.be.eq(givenPoint);
+      expect(record.tagId).to.be.eq(givenTagId);
+    })
+
+    it("create contribution record twice", async () => {
+      const givenPoint = 1000;
       await contributionPoint.connect(manager).createRecord(
           contributor0.address, 0, givenPoint
       );
