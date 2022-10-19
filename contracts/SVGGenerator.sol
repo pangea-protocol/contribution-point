@@ -10,9 +10,9 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 library SVGGenerator {
     string internal constant CANVAS =
     '<svg xmlns="http://www.w3.org/2000/svg" width="264" height="244" version="1.1" font-family="volcano" fill="#ffffff">';
-    string internal constant TITLE = '<text x="16" y="31" font-size="18px">Contribution Points</text>';
-    string internal constant FOOTER = '<rect x="0" y="212" width="264" height="32" fill="#000000"/>';
-    string internal constant POINT = '<text x="248" y="135" text-anchor="end" font-size="12px">points</text>';
+    string internal constant TITLE = '<text x="30" y="25" font-size="10.5">Contribution Points</text>';
+    string internal constant HEADER = '<rect x="28" y="16" width="208" height="11" fill="#000000"/>';
+    string internal constant POINT = '<text x="238" y="136" text-anchor="end" font-size="14" fill="#000000">points</text>';
     string internal constant END = "</svg>";
 
 
@@ -29,7 +29,7 @@ library SVGGenerator {
         }
 
         return string(abi.encodePacked(
-        '<text x="248" y="31" text-anchor="end" font-size="15px"># ',
+        '<text x="233" y="25" text-anchor="end" font-size="10">#',
         text,
         '</text>'
         ));
@@ -40,7 +40,7 @@ library SVGGenerator {
         ? Strings.toString(uint256(point))
         : string(abi.encodePacked("-", Strings.toString(uint256(-point))));
         return string(abi.encodePacked(
-                '<text x="248" y="120" text-anchor="end" font-size="20px">',
+                '<text x="238" y="122" text-anchor="end" font-size="24" fill="#000000">',
                     text,
                     '</text>'
             ));
@@ -48,13 +48,13 @@ library SVGGenerator {
 
     function addressMessage(address owner) internal pure returns (string memory) {
         return string(abi.encodePacked(
-            '<text x="80" y="230" text-anchor="right" font-size="8px">',
-            Strings.toHexString(uint160(owner),20),
+            '<text x="132" y="225" text-anchor="middle" font-size="9" font-family="IBMPlexSans" fill="#000000">',
+            Strings.toHexString(uint160(owner), 20),
             '</text>'
         ));
     }
 
     function SVGImage() internal pure returns (string memory) {
-        return string(abi.encodePacked(CANVAS, Background.IMAGE(), TITLE, POINT, Font.RESOURCE(), Logo.RESOURCE(), FOOTER));
+        return string(abi.encodePacked(CANVAS, Background.IMAGE(), HEADER, TITLE, POINT, Font.RESOURCE(), Logo.RESOURCE()));
     }
 }
