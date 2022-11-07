@@ -13,7 +13,7 @@ contract Giveaway is OwnableUpgradeable, UsePointCallee {
 
     address public contributionPoint;
     address public token;
-    uint256 internal multiplier;
+    uint256 public multiplier;
 
     function initialize(
         address _contributionPoint,
